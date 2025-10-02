@@ -5,16 +5,16 @@ LOG="/opt/mcstatus/mcstatus.log"
 touch "$LOG" 2>/dev/null || true
 chmod 664 "$LOG" 2>/dev/null || true
 
-# Load env
+# Load & EXPORT everything from .env
 if [ -f /opt/mcstatus/.env ]; then
-  # shellcheck disable=SC1091
+  set -a
   . /opt/mcstatus/.env
+  set +a
 else
   echo "$(date -Is) ERROR: /opt/mcstatus/.env missing" >> "$LOG"
   exit 1
 fi
 
-# Ensure uv is on PATH for the deploy user
 export PATH="$HOME/.local/bin:$PATH"
 
 
