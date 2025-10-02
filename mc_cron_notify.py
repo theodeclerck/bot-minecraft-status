@@ -2,7 +2,10 @@
 import os
 import json
 import requests
+from dotenv import load_dotenv
 from mcstatus import JavaServer
+
+load_dotenv()
 
 MC_ADDRESS = os.getenv("SERVER_IP")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
