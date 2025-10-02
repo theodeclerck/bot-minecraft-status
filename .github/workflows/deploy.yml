@@ -28,6 +28,18 @@ jobs:
             --exclude '.github' \
             ./ ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:${{ secrets.PI_PATH }}/
 
+      - name: Write .env on Pi
+        run: |
+          ssh -p "${SSH_PORT:-22}" "${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}" '
+            cat > "${{ secrets.PI_PATH }}/.env" <<EOF
+          SERVER_IP="${{ vars.SERVER_IP }}"
+          WEBHOOK_URL="${{ secrets.WEBHOOK_URL }}"
+          INTERVAL="${{ vars.INTERVAL }}"
+          EOF
+            chown deploy:deploy "${{ secrets.PI_PATH }}/.env"
+            chmod 600 "${{ secrets.PI_PATH }}/.env"
+          '
+
       - name: Install uv & sync deps, restart service
         run: |
           ssh ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }} '
