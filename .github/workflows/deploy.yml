@@ -1,0 +1,56 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: alpine-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add Pi to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.PI_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Rsync code to the Pi
+        run: |
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude '.github' \
+            ./ ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }}:${{ secrets.PI_PATH }}/
+
+      - name: Install uv & sync deps, restart service
+        run: |
+          ssh ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }} '
+            set -e
+            export PATH="$HOME/.local/bin:$PATH"
+            # Install uv if missing
+            if ! command -v uv >/dev/null 2>&1; then
+              curl -Ls https://astral.sh/uv/install.sh | sh
+            fi
+            cd ${{ secrets.PI_PATH }}
+            # Create/refresh venv & install deps
+            uv sync --frozen --no-dev
+            # Restart service (needs root). Use doas or sudo depending on your setup:
+          '
+      - name: Restart service as root
+        run: |
+          ssh ${{ secrets.PI_USER }}@${{ secrets.PI_HOST }} '
+            if command -v doas >/dev/null 2>&1; then
+              doas rc-service mcstatus restart
+            elif command -v sudo >/dev/null 2>&1; then
+              sudo rc-service mcstatus restart
+            else
+              echo "No doas/sudo available for service restart." >&2
+              exit 1
+            fi
+          '
