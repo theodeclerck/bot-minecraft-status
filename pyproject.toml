@@ -1,0 +1,16 @@
+[project]
+name = "bot-minecraft-status"
+version = "0.1.0"
+description = "A cron job Discord bot that checks the status of a Minecraft server and updates its status in a Discord channel."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Theo Declerck", email = "theo.dclrck5@gmail.com"}
+]
+requires-python = ">=3.13"
+dependencies = [
+    "discord.py>=2.6.3",
+    "mcstatus>=12.0.5",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.5"
+]
