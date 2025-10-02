@@ -1,18 +1,39 @@
 #!/bin/sh
-
 set -eu
 
-ENV_FILE="/opt/mcstatus/.env"
-[ -f "$ENV_FILE" ] && . "$ENV_FILE"
+LOG="/opt/mcstatus/mcstatus.log"
+touch "$LOG" 2>/dev/null || true
+chmod 664 "$LOG" 2>/dev/null || true
 
-if [ -z "$WEBHOOK_URL" ]; then
-  echo "WEBHOOK_URL is required (set it in /opt/mcstatus/.env)" >&2
+# Load env
+if [ -f /opt/mcstatus/.env ]; then
+  # shellcheck disable=SC1091
+  . /opt/mcstatus/.env
+else
+  echo "$(date -Is) ERROR: /opt/mcstatus/.env missing" >> "$LOG"
   exit 1
 fi
 
+# Ensure uv is on PATH for the deploy user
 export PATH="$HOME/.local/bin:$PATH"
 
+
+if [ -z "$WEBHOOK_URL" ]; then
+  echo "$(date -Is) ERROR: WEBHOOK_URL is required" >> "$LOG"
+  exit 1
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  echo "$(date -Is) ERROR: uv not found in PATH ($PATH)" >> "$LOG"
+  exit 1
+fi
+
+echo "$(date -Is) run.sh starting; interval=$INTERVAL; addr=$MC_ADDRESS; user=$(id -un)" >> "$LOG"
+
 while true; do
-  uv run python mcstatus.py
+  echo "$(date -Is) running mcstatus.py" >> "$LOG"
+  ( cd /opt/mcstatus && uv run python mcstatus.py ) >> "$LOG" 2>&1 || {
+    echo "$(date -Is) ERROR: mcstatus.py exited non-zero" >> "$LOG"
+  }
   sleep "$INTERVAL"
 done

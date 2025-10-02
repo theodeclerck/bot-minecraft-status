@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-"""
-mc_cron_notify.py — check Minecraft server status once and notify Discord if it changed.
-Designed to be run from crontab.
-"""
-
 import os
 import json
 import requests
 from mcstatus import JavaServer
 
-# --- Config ---
-MC_ADDRESS = os.getenv("MC_ADDRESS")
+MC_ADDRESS = os.getenv("SERVER_IP")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 STATE_FILE = os.getenv("STATE_FILE", "/tmp/mc_status.json")
 
@@ -58,7 +52,6 @@ def main():
     new_state = check_status()
     old_state = load_state()
 
-    # Compare only UP/DOWN, not player count
     if old_state is None or new_state["up"] != old_state.get("up"):
         if new_state["up"]:
             msg = f"✅ **UP** — `{MC_ADDRESS}` | {new_state['players']} players online\nMOTD: {new_state['motd']}"
